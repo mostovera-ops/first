@@ -38,6 +38,21 @@ function errorMessage(e: unknown): string {
   return 'Something went wrong. Please try again.';
 }
 
+/**
+ * Strip the leftover auth fragment from the URL after a redirect sign-in
+ * (the `#access_token=...` / empty `#`, or `?code=`/`?error=` params), so the
+ * address bar shows a clean URL instead of `.../#`.
+ */
+function cleanAuthUrl() {
+  if (typeof window === 'undefined') return;
+  const { hash, search, origin, pathname } = window.location;
+  const hasAuthParams =
+    hash.length > 0 || /[?&](code|error|error_description)=/.test(search);
+  if (hasAuthParams) {
+    window.history.replaceState({}, document.title, origin + pathname);
+  }
+}
+
 export const useAuth = create<AuthState>((set, get) => ({
   status: isSupabaseConfigured ? 'loading' : 'signedOut',
   session: null,
@@ -52,17 +67,21 @@ export const useAuth = create<AuthState>((set, get) => ({
     }
 
     const applySession = (session: Session | null, event: string | null) => {
+      const recovery =
+        event === 'PASSWORD_RECOVERY'
+          ? true
+          : event === 'SIGNED_OUT'
+            ? false
+            : get().recoveryMode;
       set({
         session,
         user: session?.user ?? null,
         status: session ? 'signedIn' : 'signedOut',
-        recoveryMode:
-          event === 'PASSWORD_RECOVERY'
-            ? true
-            : event === 'SIGNED_OUT'
-              ? false
-              : get().recoveryMode,
+        recoveryMode: recovery,
       });
+      // Tidy the address bar after a redirect sign-in — but not during password
+      // recovery, where the reset screen is still driven by the URL token.
+      if (session && !recovery) cleanAuthUrl();
     };
 
     // Primary signal: onAuthStateChange fires INITIAL_SESSION on setup and on
