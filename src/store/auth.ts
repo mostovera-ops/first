@@ -45,9 +45,11 @@ function errorMessage(e: unknown): string {
  */
 function cleanAuthUrl() {
   if (typeof window === 'undefined') return;
-  const { hash, search, origin, pathname } = window.location;
+  const { search, origin, pathname, href } = window.location;
+  // href.includes('#') catches a bare "#" too (location.hash is "" for that,
+  // which is why the earlier check missed it).
   const hasAuthParams =
-    hash.length > 0 || /[?&](code|error|error_description)=/.test(search);
+    href.includes('#') || /[?&](code|error|error_description)=/.test(search);
   if (hasAuthParams) {
     window.history.replaceState({}, document.title, origin + pathname);
   }
@@ -81,7 +83,12 @@ export const useAuth = create<AuthState>((set, get) => ({
       });
       // Tidy the address bar after a redirect sign-in — but not during password
       // recovery, where the reset screen is still driven by the URL token.
-      if (session && !recovery) cleanAuthUrl();
+      // Run once now and once shortly after, in case supabase-js re-touches the
+      // URL right after emitting the event.
+      if (session && !recovery) {
+        cleanAuthUrl();
+        setTimeout(cleanAuthUrl, 300);
+      }
     };
 
     // Primary signal: onAuthStateChange fires INITIAL_SESSION on setup and on
