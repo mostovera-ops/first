@@ -36,14 +36,24 @@ export function defaultAnimalForId(id: string): string {
 }
 
 /**
- * Deterministic soft two-stop gradient for a user id. Used as the background
- * behind an emoji/initials fallback so every user gets a stable, unique tint.
+ * Solid, on-brand avatar background colours (purple-leaning to match the
+ * app accent), used behind an emoji/initials fallback. Kept flat/monochrome
+ * per avatar to fit the minimal aesthetic.
  */
-export function gradientForId(id: string): string {
-  const h = hashString(id);
-  const hue1 = h % 360;
-  const hue2 = (hue1 + 40 + ((h >> 8) % 60)) % 360;
-  return `linear-gradient(135deg, hsl(${hue1} 65% 55%), hsl(${hue2} 60% 45%))`;
+export const AVATAR_COLORS = [
+  '#6e6cf6', // accent indigo (our purple)
+  '#8b5cf6', // violet
+  '#7a5af0', // purple
+  '#5b6ee8', // blue-indigo
+  '#9d5cf0', // orchid
+  '#5e8bef', // blue
+  '#3fa9a0', // teal
+  '#e0699a', // rose
+];
+
+/** Deterministic solid background colour for a user id (stable). */
+export function avatarColorForId(id: string): string {
+  return AVATAR_COLORS[hashString(id) % AVATAR_COLORS.length];
 }
 
 /** Single-letter initial from a profile (first name, else email). */

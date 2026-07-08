@@ -3,7 +3,7 @@ import type { User } from '@supabase/supabase-js';
 import type { Profile } from '../../types';
 import {
   ANIMAL_BY_SLUG,
-  gradientForId,
+  avatarColorForId,
   initialsFor,
 } from '../../lib/avatar';
 import { cn } from '../../lib/utils';
@@ -29,7 +29,7 @@ export function animalImageSrc(slug: string): string {
  */
 export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
   const id = profile?.id ?? user?.id ?? 'anon';
-  const gradient = gradientForId(id);
+  const bg = avatarColorForId(id);
   const [imgError, setImgError] = useState(false);
 
   // Reset the error flag when the underlying image source changes.
@@ -50,7 +50,7 @@ export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
     return (
       <span
         className={base}
-        style={{ ...dimension, background: gradient }}
+        style={{ ...dimension, background: bg }}
         aria-hidden
       >
         <span style={{ fontSize: size * 0.7, lineHeight: 1 }}>
@@ -79,7 +79,7 @@ export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
     const animal = ANIMAL_BY_SLUG[profile.avatar_animal];
     if (!imgError) {
       return (
-        <span className={base} style={{ ...dimension, background: gradient }}>
+        <span className={base} style={{ ...dimension, background: bg }}>
           <img
             src={animalImageSrc(profile.avatar_animal)}
             alt=""
@@ -92,7 +92,7 @@ export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
     return (
       <span
         className={base}
-        style={{ ...dimension, background: gradient }}
+        style={{ ...dimension, background: bg }}
         aria-hidden
       >
         <span style={{ fontSize: size * 0.7, lineHeight: 1 }}>
@@ -106,7 +106,7 @@ export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
   return (
     <span
       className={cn(base, 'font-semibold text-white')}
-      style={{ ...dimension, background: gradient }}
+      style={{ ...dimension, background: bg }}
     >
       <span style={{ fontSize: size * 0.8, lineHeight: 1 }}>
         {initialsFor(profile, user?.email ?? undefined)}
