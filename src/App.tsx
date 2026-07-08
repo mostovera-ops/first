@@ -46,7 +46,11 @@ export default function App() {
         setDbNamespace(userId);
         if (user) void loadProfile(user);
         void (async () => {
-          await migrateLegacyDataIfNeeded(userId);
+          try {
+            await migrateLegacyDataIfNeeded(userId);
+          } catch {
+            // Migration is best-effort — never block the app on it.
+          }
           if (!cancelled) await loadBoards();
         })();
       }
