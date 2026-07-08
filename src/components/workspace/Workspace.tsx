@@ -20,6 +20,7 @@ import { Plus, LayoutGrid } from 'lucide-react';
 import { useStore } from '../../store';
 import { ProjectCard } from './ProjectCard';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { UserMenu } from '../account/UserMenu';
 
 export function Workspace() {
   const projects = useStore((s) => s.projects);
@@ -90,13 +91,16 @@ export function Workspace() {
               : 'Your workspace is empty'}
           </p>
         </div>
-        <button
-          onClick={handleAdd}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-[13px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
-        >
-          <Plus size={16} />
-          New project
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleAdd}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-[13px] font-medium text-white shadow-sm transition-opacity hover:opacity-90"
+          >
+            <Plus size={16} />
+            New project
+          </button>
+          <UserMenu />
+        </div>
       </header>
 
       {projects.length === 0 ? (

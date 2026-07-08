@@ -23,6 +23,7 @@ import { useStore } from '../../store';
 import { ListColumn } from './ListColumn';
 import { TaskCardOverlay } from '../card/TaskCardOverlay';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
+import { UserMenu } from '../account/UserMenu';
 
 interface BoardProps {
   projectId: string;
@@ -236,7 +237,7 @@ export function Board({ projectId }: BoardProps) {
         </button>
         <span className="text-ink-faint/60">/</span>
         <h1 className="text-[14px] font-semibold text-ink">{project.name}</h1>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-3">
           <button
             onClick={handleAddList}
             className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface-2 px-2.5 py-1.5 text-[12px] font-medium text-ink-muted transition-colors hover:bg-surface-3 hover:text-ink"
@@ -244,6 +245,7 @@ export function Board({ projectId }: BoardProps) {
             <Plus size={14} />
             Add list
           </button>
+          <UserMenu />
         </div>
       </header>
 

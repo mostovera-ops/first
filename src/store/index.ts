@@ -18,6 +18,8 @@ interface FluxState {
   attachments: Record<string, AttachmentMeta[]>;
 
   load: () => Promise<void>;
+  /** Clear all in-memory board state (e.g. on sign-out / user switch). */
+  reset: () => void;
 
   openProject: (id: string) => void;
   closeProject: () => void;
@@ -92,6 +94,23 @@ export const useStore = create<FluxState>((set, get) => ({
       lists: sortByOrder(lists),
       tasks: sortByOrder(tasks),
       loaded: true,
+    });
+  },
+
+  reset: () => {
+    // Revoke any cached attachment object URLs before dropping state.
+    const cache = get().attachments;
+    for (const metas of Object.values(cache)) {
+      for (const m of metas) URL.revokeObjectURL(m.url);
+    }
+    set({
+      loaded: false,
+      projects: [],
+      lists: [],
+      tasks: [],
+      currentProjectId: null,
+      openTaskId: null,
+      attachments: {},
     });
   },
 
