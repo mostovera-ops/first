@@ -45,6 +45,7 @@ export interface Profile {
   avatar_animal: string | null;
   avatar_url: string | null;
   avatar_emoji: string | null;
+  welcomed_at: string | null;
   created_at?: string;
   updated_at?: string;
 }

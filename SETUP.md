@@ -169,5 +169,68 @@ already included. If you created the `profiles` table before that, run
 
 ---
 
-_Stages 4–5 (Resend emails, account deletion) will be appended to this file as
-those stages are built._
+## 9. Transactional emails (Stage 4)
+
+Two kinds of email:
+
+| Email | How it's sent |
+| :-- | :-- |
+| **Confirm signup**, **Reset password** | Native Supabase Auth templates (edit the HTML in the dashboard) |
+| **Welcome**, **Account deleted** | Supabase **Edge Function** → **Resend** |
+
+### 9a. Run the migration
+
+**SQL Editor** → run `supabase/migrations/0004_welcomed_at.sql` (adds a
+`welcomed_at` column so the welcome email is sent only once).
+
+### 9b. Native templates (confirm + reset)
+
+**Authentication → Email Templates**:
+
+1. **Confirm signup** → paste `supabase/templates/confirm-signup.html`.
+2. **Reset password** → paste `supabase/templates/reset-password.html`.
+
+Edit the wording anytime — these files are the source of truth.
+
+> For reliable delivery of the native emails, point Supabase at Resend's SMTP:
+> **Project Settings → Authentication → SMTP Settings → Enable Custom SMTP**,
+> host `smtp.resend.com`, port `465`, username `resend`, password = your Resend
+> API key, sender = your verified address. (Optional but recommended.)
+
+### 9c. Resend account + sender domain
+
+1. Create an account at <https://resend.com>.
+2. **Domains → Add Domain**, add the DNS records they show at your registrar,
+   and wait for it to verify. (For a quick test you can use Resend's
+   `onboarding@resend.dev` sender to your own address without a domain.)
+3. **API Keys → Create API Key**, copy it (starts with `re_`).
+
+### 9d. Deploy the Edge Function + secrets
+
+You need the Supabase CLI (<https://supabase.com/docs/guides/cli>):
+
+```bash
+supabase login
+supabase link --project-ref YOUR-PROJECT-REF
+
+# Secrets (server-side only — never in the client):
+supabase secrets set RESEND_API_KEY=re_xxxxxxxx
+supabase secrets set EMAIL_FROM="Flux <hello@yourdomain.com>"
+supabase secrets set APP_URL="https://your-domain.com"
+
+supabase functions deploy send-email
+```
+
+`SUPABASE_URL` and `SUPABASE_ANON_KEY` are injected into functions
+automatically — you don't set those.
+
+### Verify Stage 4
+
+- Sign up with email → you get the branded **Confirm signup** email → confirm.
+- First confirmed login → a **Welcome** email arrives (sent once).
+- **Forgot password** → the branded **Reset password** email arrives.
+- Edit any template file and re-deploy / re-paste to change the copy.
+
+---
+
+_Stage 5 (account deletion) will be appended to this file next._

@@ -47,6 +47,7 @@ function fallbackProfile(user: User): Profile {
     avatar_animal: defaultAnimalForId(user.id),
     avatar_url: null,
     avatar_emoji: null,
+    welcomed_at: null,
   };
 }
 
@@ -68,32 +69,44 @@ export const useProfile = create<ProfileState>((set, get) => ({
       .eq('id', user.id)
       .maybeSingle();
 
+    let resolved: Profile;
     if (error) {
-      set({ profile: fallbackProfile(user), loading: false });
-      return;
+      resolved = fallbackProfile(user);
+    } else if (data) {
+      resolved = data as Profile;
+    } else {
+      // No row yet (trigger missing or race) — create a minimal one.
+      const { data: created } = await supabase
+        .from('profiles')
+        .insert({
+          id: user.id,
+          email: user.email ?? null,
+          first_name: fallbackProfile(user).first_name,
+          last_name: fallbackProfile(user).last_name,
+        })
+        .select('*')
+        .single();
+      resolved = (created as Profile) ?? fallbackProfile(user);
     }
 
-    if (data) {
-      // Ensure a default animal exists for older/empty rows.
-      const profile = data as Profile;
-      if (profile.avatar_type === 'animal' && !profile.avatar_animal) {
-        profile.avatar_animal = defaultAnimalForId(user.id);
+    // Ensure a default animal exists for empty rows.
+    if (resolved.avatar_type === 'animal' && !resolved.avatar_animal) {
+      resolved.avatar_animal = defaultAnimalForId(user.id);
+    }
+    set({ profile: resolved, loading: false });
+
+    // One-time welcome email, once the address is confirmed / first login.
+    const confirmed = Boolean(user.email_confirmed_at ?? user.confirmed_at);
+    if (!resolved.welcomed_at && confirmed) {
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: { type: 'welcome' },
+        });
+        await get().updateProfile({ welcomed_at: new Date().toISOString() });
+      } catch {
+        // Function not deployed yet or a transient error — retry next login.
       }
-      set({ profile, loading: false });
-      return;
     }
-
-    // No row yet (trigger missing or race) — create one.
-    const seed = fallbackProfile(user);
-    const { data: created, error: insErr } = await supabase
-      .from('profiles')
-      .insert(seed)
-      .select('*')
-      .single();
-    set({
-      profile: (insErr ? seed : (created as Profile)) ?? seed,
-      loading: false,
-    });
   },
 
   updateProfile: async (patch) => {
