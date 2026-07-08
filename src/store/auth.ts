@@ -69,11 +69,13 @@ export const useAuth = create<AuthState>((set, get) => ({
     // every change (including sessions parsed from the confirmation/OAuth URL).
     supabase.auth.onAuthStateChange((event, session) => applySession(session, event));
 
-    // Safety net that CANNOT hang. getSession() can occasionally stall while
-    // supabase-js parses a session out of the redirect URL (its internal lock),
-    // which would pin the app on the loading spinner. Race it against a timeout
-    // and retry a few times; if nothing resolves, fall back to the sign-in
-    // screen rather than spin forever.
+    // Safety net for the rare case onAuthStateChange never fires. IMPORTANT:
+    // calling getSession() *while* supabase-js is parsing a session out of the
+    // redirect URL (the "#access_token=..." hash) deadlocks on its internal
+    // lock and pins the app on the spinner — the exact hang seen after
+    // OAuth/email-confirm. So we (a) let onAuthStateChange resolve the normal
+    // case, and (b) only poll getSession after a delay, once URL parsing has
+    // released the lock — racing each call against a timeout as belt-and-braces.
     const getSessionSafe = () =>
       Promise.race<{ session: Session | null }>([
         supabase!.auth.getSession().then((r) => ({ session: r.data.session })),
@@ -99,7 +101,8 @@ export const useAuth = create<AuthState>((set, get) => ({
         set({ status: 'signedOut' });
       }
     };
-    void resolveInitial();
+    // Delay the first poll so it can't contend with the redirect-URL parsing.
+    setTimeout(() => void resolveInitial(), 1600);
   },
 
   signUpWithEmail: async (email, password) => {
