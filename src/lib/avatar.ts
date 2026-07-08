@@ -46,16 +46,24 @@ export function gradientForId(id: string): string {
   return `linear-gradient(135deg, hsl(${hue1} 65% 55%), hsl(${hue2} 60% 45%))`;
 }
 
-/** 1–2 letter initials from a profile (name first, else email). */
+/** Single-letter initial from a profile (first name, else email). */
 export function initialsFor(profile: Profile | null, email?: string): string {
   const first = profile?.first_name?.trim();
+  if (first) return first[0].toUpperCase();
   const last = profile?.last_name?.trim();
-  if (first || last) {
-    return ((first?.[0] ?? '') + (last?.[0] ?? '')).toUpperCase() || '?';
-  }
-  const source = profile?.email ?? email ?? '';
-  return (source.trim()[0] ?? '?').toUpperCase();
+  if (last) return last[0].toUpperCase();
+  const source = (profile?.email ?? email ?? '').trim();
+  return (source[0] ?? '?').toUpperCase();
 }
+
+/** A curated set of emojis for the "choose your own emoji" avatar option. */
+export const EMOJI_CHOICES: string[] = [
+  '😀', '😎', '🤓', '🥳', '😊', '🤔', '😴', '🤗',
+  '🚀', '⭐', '🔥', '⚡', '🌈', '🌸', '🍀', '🌊',
+  '🎨', '🎧', '🎮', '📚', '💡', '🧠', '🦄', '👾',
+  '🐙', '🦊', '🐼', '🐨', '🦁', '🐸', '🐝', '🦋',
+  '🍕', '🍩', '☕', '🌮', '🍉', '🥑', '🌵', '🪐',
+];
 
 /** Full display name, falling back to the email local-part, then "there". */
 export function displayName(profile: Profile | null, email?: string): string {

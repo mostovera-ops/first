@@ -154,6 +154,11 @@ The preset animal renders are **not** uploaded here — they're static files you
 add to `public/avatars/animals/<slug>.png` in the repo (see the README in that
 folder). Missing files fall back to an emoji-on-gradient automatically.
 
+**Custom emoji avatars:** the "choose your own emoji" option needs the
+`avatar_emoji` column. If you ran `0001_profiles.sql` from this repo it's
+already included. If you created the `profiles` table before that, run
+`supabase/migrations/0003_avatar_emoji.sql` once (it's idempotent).
+
 ### Verify Stage 3
 
 - Account → **Avatar**: the grid shows 12 characters; a default is

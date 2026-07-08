@@ -3,8 +3,8 @@ import { ArrowLeft, LogOut, Check, Loader2, Mail } from 'lucide-react';
 import { useAuth } from '../../store/auth';
 import { useProfile, providerLabel } from '../../store/profile';
 import { useUI } from '../../store/ui';
-import { Avatar } from '../avatar/Avatar';
 import { AvatarPicker } from '../avatar/AvatarPicker';
+import { AvatarUploadButton } from '../avatar/AvatarUploadButton';
 import { displayName } from '../../lib/avatar';
 import { cn } from '../../lib/utils';
 
@@ -29,9 +29,9 @@ export function AccountPage() {
       </header>
 
       <div className="mx-auto max-w-xl px-6 py-8">
-        {/* Identity header */}
+        {/* Identity header — click the avatar to upload a photo */}
         <div className="mb-8 flex items-center gap-4">
-          <Avatar profile={profile} user={user} size={64} />
+          <AvatarUploadButton profile={profile} user={user} size={64} />
           <div className="min-w-0">
             <p className="truncate text-[17px] font-semibold text-ink">
               {displayName(profile, user?.email ?? undefined)}

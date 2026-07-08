@@ -41,9 +41,24 @@ export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
 
   const dimension = { width: size, height: size };
   const base = cn(
-    'relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full',
+    'relative inline-flex shrink-0 select-none items-center justify-center overflow-hidden rounded-full leading-none',
     className,
   );
+
+  // Custom emoji avatar.
+  if (profile?.avatar_type === 'emoji' && profile.avatar_emoji) {
+    return (
+      <span
+        className={base}
+        style={{ ...dimension, background: gradient }}
+        aria-hidden
+      >
+        <span style={{ fontSize: size * 0.7, lineHeight: 1 }}>
+          {profile.avatar_emoji}
+        </span>
+      </span>
+    );
+  }
 
   // Uploaded image.
   if (profile?.avatar_type === 'upload' && profile.avatar_url && !imgError) {
@@ -80,20 +95,22 @@ export function Avatar({ profile, user, size = 32, className }: AvatarProps) {
         style={{ ...dimension, background: gradient }}
         aria-hidden
       >
-        <span style={{ fontSize: size * 0.5, lineHeight: 1 }}>
+        <span style={{ fontSize: size * 0.7, lineHeight: 1 }}>
           {animal?.emoji ?? '🙂'}
         </span>
       </span>
     );
   }
 
-  // Initials on gradient.
+  // Single-letter initial on gradient — large and centered.
   return (
     <span
       className={cn(base, 'font-semibold text-white')}
-      style={{ ...dimension, background: gradient, fontSize: size * 0.4 }}
+      style={{ ...dimension, background: gradient }}
     >
-      {initialsFor(profile, user?.email ?? undefined)}
+      <span style={{ fontSize: size * 0.8, lineHeight: 1 }}>
+        {initialsFor(profile, user?.email ?? undefined)}
+      </span>
     </span>
   );
 }

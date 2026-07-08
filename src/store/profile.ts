@@ -14,6 +14,8 @@ interface ProfileState {
   updateProfile: (patch: Partial<Profile>) => Promise<void>;
   /** Switch to a preset animal avatar. */
   setAnimalAvatar: (slug: string) => Promise<void>;
+  /** Switch to a custom emoji avatar. */
+  setEmojiAvatar: (emoji: string) => Promise<void>;
   /** Upload a cropped image to Storage and switch to it. */
   uploadAvatarImage: (blob: Blob) => Promise<void>;
   clear: () => void;
@@ -44,6 +46,7 @@ function fallbackProfile(user: User): Profile {
     avatar_type: 'animal',
     avatar_animal: defaultAnimalForId(user.id),
     avatar_url: null,
+    avatar_emoji: null,
   };
 }
 
@@ -113,6 +116,10 @@ export const useProfile = create<ProfileState>((set, get) => ({
 
   setAnimalAvatar: async (slug) => {
     await get().updateProfile({ avatar_type: 'animal', avatar_animal: slug });
+  },
+
+  setEmojiAvatar: async (emoji) => {
+    await get().updateProfile({ avatar_type: 'emoji', avatar_emoji: emoji });
   },
 
   uploadAvatarImage: async (blob) => {

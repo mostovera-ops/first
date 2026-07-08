@@ -8,9 +8,10 @@ create table if not exists public.profiles (
   first_name   text,
   last_name    text,
   avatar_type  text not null default 'animal'
-                 check (avatar_type in ('animal', 'upload')),
+                 check (avatar_type in ('animal', 'upload', 'emoji')),
   avatar_animal text,          -- slug, e.g. 'fox' (assigned client-side by user-id hash)
   avatar_url   text,           -- public URL when avatar_type = 'upload'
+  avatar_emoji text,           -- a single emoji when avatar_type = 'emoji'
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );

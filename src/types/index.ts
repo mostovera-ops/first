@@ -34,7 +34,7 @@ export interface Project {
   createdAt: number;
 }
 
-export type AvatarType = 'animal' | 'upload';
+export type AvatarType = 'animal' | 'upload' | 'emoji';
 
 export interface Profile {
   id: string;
@@ -44,6 +44,7 @@ export interface Profile {
   avatar_type: AvatarType;
   avatar_animal: string | null;
   avatar_url: string | null;
+  avatar_emoji: string | null;
   created_at?: string;
   updated_at?: string;
 }

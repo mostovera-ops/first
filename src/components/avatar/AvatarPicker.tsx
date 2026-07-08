@@ -1,50 +1,61 @@
 import { useState } from 'react';
-import { Upload, Check, Loader2 } from 'lucide-react';
+import { Check, SmilePlus } from 'lucide-react';
 import { useProfile } from '../../store/profile';
 import { ANIMALS } from '../../lib/avatar';
 import { animalImageSrc } from './Avatar';
-import { AvatarCropper } from './AvatarCropper';
+import { EmojiPicker } from './EmojiPicker';
 import { cn } from '../../lib/utils';
 
 export function AvatarPicker() {
   const profile = useProfile((s) => s.profile);
   const setAnimalAvatar = useProfile((s) => s.setAnimalAvatar);
-  const uploadAvatarImage = useProfile((s) => s.uploadAvatarImage);
+  const setEmojiAvatar = useProfile((s) => s.setEmojiAvatar);
 
-  const [croppingFile, setCroppingFile] = useState<File | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  const isUpload = profile?.avatar_type === 'upload';
-
-  const onFilePicked = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    setUploadError(null);
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setUploadError('Please choose an image file.');
-      return;
-    }
-    setCroppingFile(file);
-  };
-
-  const handleCropped = async (blob: Blob) => {
-    setBusy(true);
-    setUploadError(null);
-    try {
-      await uploadAvatarImage(blob);
-      setCroppingFile(null);
-    } catch {
-      setUploadError('Upload failed. Check your Storage bucket setup.');
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [emojiOpen, setEmojiOpen] = useState(false);
+  const emojiSelected = profile?.avatar_type === 'emoji';
 
   return (
     <div>
-      <div className="grid grid-cols-6 gap-2 sm:grid-cols-7">
+      {/* Exactly two rows: [choose-your-emoji] + 12 animals across 7 columns. */}
+      <div className="grid grid-cols-7 gap-2">
+        {/* First tile — choose your own emoji */}
+        <div className="relative">
+          <button
+            aria-label="Choose your own emoji"
+            title="Choose your own emoji"
+            onClick={() => setEmojiOpen((v) => !v)}
+            className={cn(
+              'flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border transition',
+              emojiSelected
+                ? 'border-accent ring-2 ring-accent/40'
+                : 'border-dashed border-line hover:border-white/20 hover:bg-surface-2',
+            )}
+          >
+            {emojiSelected && profile?.avatar_emoji ? (
+              <span className="text-[22px] leading-none">
+                {profile.avatar_emoji}
+              </span>
+            ) : (
+              <SmilePlus size={18} className="text-ink-faint" />
+            )}
+            {emojiSelected && (
+              <span className="absolute right-0.5 top-0.5 rounded-full bg-accent p-0.5 text-white">
+                <Check size={10} />
+              </span>
+            )}
+          </button>
+          {emojiOpen && (
+            <EmojiPicker
+              onPick={(emoji) => {
+                void setEmojiAvatar(emoji);
+                setEmojiOpen(false);
+              }}
+              onClose={() => setEmojiOpen(false)}
+            />
+          )}
+        </div>
+
+        {/* Preset animals */}
         {ANIMALS.map((animal) => {
           const selected =
             profile?.avatar_type === 'animal' &&
@@ -71,51 +82,12 @@ export function AvatarPicker() {
             </button>
           );
         })}
-
-        {/* Upload your own */}
-        <label
-          className={cn(
-            'relative flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border border-dashed transition',
-            isUpload
-              ? 'border-accent ring-2 ring-accent/40'
-              : 'border-line text-ink-faint hover:border-white/20 hover:bg-surface-2 hover:text-ink-muted',
-          )}
-          title="Upload your own"
-        >
-          {busy ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Upload size={16} />
-          )}
-          <span className="text-[9px] font-medium">Upload</span>
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={onFilePicked}
-          />
-          {isUpload && (
-            <span className="absolute right-0.5 top-0.5 rounded-full bg-accent p-0.5 text-white">
-              <Check size={10} />
-            </span>
-          )}
-        </label>
       </div>
 
-      {uploadError && (
-        <p className="mt-2 text-[12px] text-danger">{uploadError}</p>
-      )}
-      <p className="mt-2 text-[11px] text-ink-faint">
-        Pick a character or upload your own photo — it’s cropped to a circle.
+      <p className="mt-2.5 text-[11px] text-ink-faint">
+        Pick a character or your own emoji. To use a photo, click your avatar
+        above.
       </p>
-
-      {croppingFile && (
-        <AvatarCropper
-          file={croppingFile}
-          onCancel={() => setCroppingFile(null)}
-          onCropped={handleCropped}
-        />
-      )}
     </div>
   );
 }
