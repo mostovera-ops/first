@@ -1,0 +1,116 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Roboto, Helvetica, Arial, sans-serif;
+
+  /* Linear-ish near-black surfaces */
+  --color-bg: #08080a;
+  --color-surface: #101013;
+  --color-surface-2: #151519;
+  --color-surface-3: #1c1c21;
+  --color-elevated: #202027;
+
+  /* Hairline border */
+  --color-line: #26262c;
+
+  /* Text ramp */
+  --color-ink: #f2f2f5;
+  --color-ink-muted: #a0a0ab;
+  --color-ink-faint: #6a6a76;
+
+  /* Single subtle accent — Linear indigo */
+  --color-accent: #6e6cf6;
+  --color-accent-soft: #6e6cf633;
+
+  /* Status */
+  --color-danger: #f2555a;
+  --color-warn: #f5a524;
+
+  --radius-card: 10px;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Thin, unobtrusive scrollbars to match the aesthetic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #33333b transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2c2c33;
+  border-radius: 8px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a3a44;
+  background-clip: content-box;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+input,
+textarea,
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--color-accent-soft);
+  color: var(--color-ink);
+}
+
+/* Native date picker indicator visible on dark */
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: invert(0.7);
+  cursor: pointer;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-overlay-in {
+  animation: overlay-in 0.14s ease-out;
+}
+.animate-modal-in {
+  animation: modal-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
