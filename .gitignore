@@ -23,9 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 
-# local tooling
-_shot.mjs
-_seed.mjs
-_test2.mjs
-_modal.mjs
-_thumb.mjs
+# Local Playwright test scripts (scratch)
+_*.mjs

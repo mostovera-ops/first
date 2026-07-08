@@ -53,6 +53,25 @@ function sortByOrder<T extends { order: number }>(arr: T[]): T[] {
   return [...arr].sort((a, b) => a.order - b.order);
 }
 
+/**
+ * Revoke cached object URLs for the given task ids and drop them from the
+ * attachments cache. Returns the pruned cache. Prevents blob-URL leaks when
+ * tasks are removed directly or via a cascading project/list delete.
+ */
+function pruneAttachmentCache(
+  cache: Record<string, AttachmentMeta[]>,
+  taskIds: Iterable<string>,
+): Record<string, AttachmentMeta[]> {
+  const next = { ...cache };
+  for (const taskId of taskIds) {
+    const metas = next[taskId];
+    if (!metas) continue;
+    for (const m of metas) URL.revokeObjectURL(m.url);
+    delete next[taskId];
+  }
+  return next;
+}
+
 export const useStore = create<FluxState>((set, get) => ({
   loaded: false,
   projects: [],
@@ -106,15 +125,25 @@ export const useStore = create<FluxState>((set, get) => ({
   },
 
   deleteProject: (id) => {
-    set((s) => ({
-      projects: s.projects.filter((p) => p.id !== id),
-      lists: s.lists.filter((l) => l.projectId !== id),
-      tasks: s.tasks.filter(
-        (t) => !s.lists.some((l) => l.id === t.listId && l.projectId === id),
-      ),
-      currentProjectId:
-        s.currentProjectId === id ? null : s.currentProjectId,
-    }));
+    set((s) => {
+      const listIds = new Set(
+        s.lists.filter((l) => l.projectId === id).map((l) => l.id),
+      );
+      const removedTaskIds = s.tasks
+        .filter((t) => listIds.has(t.listId))
+        .map((t) => t.id);
+      return {
+        projects: s.projects.filter((p) => p.id !== id),
+        lists: s.lists.filter((l) => l.projectId !== id),
+        tasks: s.tasks.filter((t) => !listIds.has(t.listId)),
+        attachments: pruneAttachmentCache(s.attachments, removedTaskIds),
+        currentProjectId:
+          s.currentProjectId === id ? null : s.currentProjectId,
+        openTaskId: removedTaskIds.includes(s.openTaskId ?? '')
+          ? null
+          : s.openTaskId,
+      };
+    });
     void db.dbDeleteProjectCascade(id);
   },
 
@@ -160,10 +189,19 @@ export const useStore = create<FluxState>((set, get) => ({
   },
 
   deleteList: (id) => {
-    set((s) => ({
-      lists: s.lists.filter((l) => l.id !== id),
-      tasks: s.tasks.filter((t) => t.listId !== id),
-    }));
+    set((s) => {
+      const removedTaskIds = s.tasks
+        .filter((t) => t.listId === id)
+        .map((t) => t.id);
+      return {
+        lists: s.lists.filter((l) => l.id !== id),
+        tasks: s.tasks.filter((t) => t.listId !== id),
+        attachments: pruneAttachmentCache(s.attachments, removedTaskIds),
+        openTaskId: removedTaskIds.includes(s.openTaskId ?? '')
+          ? null
+          : s.openTaskId,
+      };
+    });
     void db.dbDeleteListCascade(id);
   },
 
@@ -215,6 +253,7 @@ export const useStore = create<FluxState>((set, get) => ({
   deleteTask: (id) => {
     set((s) => ({
       tasks: s.tasks.filter((t) => t.id !== id),
+      attachments: pruneAttachmentCache(s.attachments, [id]),
       openTaskId: s.openTaskId === id ? null : s.openTaskId,
     }));
     void db.dbDeleteTaskCascade(id);
