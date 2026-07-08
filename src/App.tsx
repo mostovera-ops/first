@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useStore } from './store';
 import { Workspace } from './components/workspace/Workspace';
 import { Board } from './components/board/Board';
+import { TaskModal } from './components/modal/TaskModal';
 
 export default function App() {
   const loaded = useStore((s) => s.loaded);
@@ -23,6 +24,7 @@ export default function App() {
   return (
     <div className="h-full">
       {currentProjectId ? <Board projectId={currentProjectId} /> : <Workspace />}
+      <TaskModal />
     </div>
   );
 }
