@@ -84,17 +84,23 @@ export const useStore = create<FluxState>((set, get) => ({
   attachments: {},
 
   async load() {
-    const [projects, lists, tasks] = await Promise.all([
-      db.dbGetProjects(),
-      db.dbGetLists(),
-      db.dbGetTasks(),
-    ]);
-    set({
-      projects: sortByOrder(projects),
-      lists: sortByOrder(lists),
-      tasks: sortByOrder(tasks),
-      loaded: true,
-    });
+    try {
+      const [projects, lists, tasks] = await Promise.all([
+        db.dbGetProjects(),
+        db.dbGetLists(),
+        db.dbGetTasks(),
+      ]);
+      set({
+        projects: sortByOrder(projects),
+        lists: sortByOrder(lists),
+        tasks: sortByOrder(tasks),
+        loaded: true,
+      });
+    } catch {
+      // Never leave the app stuck on the loading spinner if IndexedDB fails —
+      // show an (empty) workspace instead.
+      set({ projects: [], lists: [], tasks: [], loaded: true });
+    }
   },
 
   reset: () => {

@@ -51,24 +51,38 @@ export const useAuth = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Reflect the current session immediately, then subscribe to changes.
-    supabase.auth.getSession().then(({ data }) => {
-      set({
-        session: data.session,
-        user: data.session?.user ?? null,
-        status: data.session ? 'signedIn' : 'signedOut',
-      });
-    });
-
+    // Primary signal: onAuthStateChange fires INITIAL_SESSION on setup and on
+    // every change (including sessions parsed from the confirmation/OAuth URL).
     supabase.auth.onAuthStateChange((event, session) => {
       set({
         session,
         user: session?.user ?? null,
         status: session ? 'signedIn' : 'signedOut',
         recoveryMode:
-          event === 'PASSWORD_RECOVERY' ? true : get().recoveryMode,
+          event === 'PASSWORD_RECOVERY'
+            ? true
+            : event === 'SIGNED_OUT'
+              ? false
+              : get().recoveryMode,
       });
     });
+
+    // Safety net: resolve the initial state even if the event is slow, and
+    // never leave the app stuck on the loading spinner if this call fails.
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (get().status === 'loading') {
+          set({
+            session: data.session,
+            user: data.session?.user ?? null,
+            status: data.session ? 'signedIn' : 'signedOut',
+          });
+        }
+      })
+      .catch(() => {
+        if (get().status === 'loading') set({ status: 'signedOut' });
+      });
   },
 
   signUpWithEmail: async (email, password) => {
