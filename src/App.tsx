@@ -35,6 +35,42 @@ export default function App() {
     initAuth();
   }, [initAuth]);
 
+  // After a redirect sign-in (Google / email confirm), supabase-js occasionally
+  // stalls while parsing the session out of the URL in place and never resolves
+  // — leaving the app on the spinner even though it has already persisted the
+  // session. If we're still loading shortly after landing on a redirect URL,
+  // reload once from a clean URL, which reads the persisted session reliably.
+  useEffect(() => {
+    const RELOAD_GUARD = 'flux_auth_reloaded';
+    if (authStatus !== 'loading') {
+      try {
+        sessionStorage.removeItem(RELOAD_GUARD);
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    const isRedirect =
+      window.location.href.includes('#') ||
+      /[?&](code|access_token|error|error_description)=/.test(
+        window.location.search,
+      );
+    if (!isRedirect) return;
+    const t = setTimeout(() => {
+      if (useAuth.getState().status !== 'loading') return;
+      try {
+        if (sessionStorage.getItem(RELOAD_GUARD)) return;
+        sessionStorage.setItem(RELOAD_GUARD, '1');
+      } catch {
+        return;
+      }
+      window.location.replace(
+        window.location.origin + window.location.pathname,
+      );
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [authStatus]);
+
   // When the signed-in user changes, point IndexedDB at their namespace,
   // migrate any pre-auth boards on first login, then (re)load the boards.
   useEffect(() => {
