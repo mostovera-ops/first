@@ -12,8 +12,14 @@ interface ProfileState {
   loadProfile: (user: User) => Promise<void>;
   /** Patch fields and persist; optimistic local update. */
   updateProfile: (patch: Partial<Profile>) => Promise<void>;
+  /** Switch to a preset animal avatar. */
+  setAnimalAvatar: (slug: string) => Promise<void>;
+  /** Upload a cropped image to Storage and switch to it. */
+  uploadAvatarImage: (blob: Blob) => Promise<void>;
   clear: () => void;
 }
+
+const AVATAR_BUCKET = 'avatars';
 
 /** Provider that created this account, for display ("Password" vs "Google"). */
 export function providerLabel(user: User | null): string {
@@ -103,6 +109,33 @@ export const useProfile = create<ProfileState>((set, get) => ({
       set({ profile: current });
       throw error;
     }
+  },
+
+  setAnimalAvatar: async (slug) => {
+    await get().updateProfile({ avatar_type: 'animal', avatar_animal: slug });
+  },
+
+  uploadAvatarImage: async (blob) => {
+    const profile = get().profile;
+    if (!profile) return;
+
+    // No backend configured — preview locally with an object URL.
+    if (!supabase) {
+      const url = URL.createObjectURL(blob);
+      await get().updateProfile({ avatar_type: 'upload', avatar_url: url });
+      return;
+    }
+
+    const path = `${profile.id}/avatar.png`;
+    const { error } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .upload(path, blob, { upsert: true, contentType: 'image/png' });
+    if (error) throw error;
+
+    const { data } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
+    // Cache-bust so the new image shows immediately behind the stable path.
+    const url = `${data.publicUrl}?t=${Date.now()}`;
+    await get().updateProfile({ avatar_type: 'upload', avatar_url: url });
   },
 
   clear: () => set({ profile: null, loading: false }),

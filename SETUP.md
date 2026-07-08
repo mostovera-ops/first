@@ -133,5 +133,36 @@ and RLS enforces per-user access.
 
 ---
 
-_Stages 3–5 (avatar storage bucket, Resend emails, account deletion) will be
-appended to this file as those stages are built._
+## 8. Avatar Storage bucket (Stage 3)
+
+Uploaded avatars are stored in a public `avatars` bucket; each user can only
+write inside their own `avatars/<user-id>/` folder.
+
+**Option A — SQL (recommended):**
+1. **SQL Editor → New query**, paste `supabase/migrations/0002_storage_avatars.sql`,
+   and **Run**. It creates the public `avatars` bucket and four Storage
+   policies (public read; insert/update/delete limited to the user's folder).
+
+**Option B — Dashboard:**
+1. **Storage → New bucket** → name `avatars`, toggle **Public bucket** ON →
+   create.
+2. Then still run the policy statements from
+   `0002_storage_avatars.sql` (the `create policy … on storage.objects` parts)
+   in the SQL Editor so uploads are restricted per user.
+
+The preset animal renders are **not** uploaded here — they're static files you
+add to `public/avatars/animals/<slug>.png` in the repo (see the README in that
+folder). Missing files fall back to an emoji-on-gradient automatically.
+
+### Verify Stage 3
+
+- Account → **Avatar**: the grid shows 12 characters; a default is
+  pre-selected (deterministic per user).
+- Click a character → the header avatar + top-right menu update immediately.
+- **Upload** → pick an image → position/zoom in the circle → **Save avatar** →
+  it appears; reload → it persists (served from the `avatars` bucket).
+
+---
+
+_Stages 4–5 (Resend emails, account deletion) will be appended to this file as
+those stages are built._

@@ -4,6 +4,7 @@ import { useAuth } from '../../store/auth';
 import { useProfile, providerLabel } from '../../store/profile';
 import { useUI } from '../../store/ui';
 import { Avatar } from '../avatar/Avatar';
+import { AvatarPicker } from '../avatar/AvatarPicker';
 import { displayName } from '../../lib/avatar';
 import { cn } from '../../lib/utils';
 
@@ -64,6 +65,11 @@ export function AccountPage() {
             <NameField field="first_name" label="First name" />
             <NameField field="last_name" label="Last name" />
           </div>
+        </Section>
+
+        {/* Avatar */}
+        <Section title="Avatar">
+          <AvatarPicker />
         </Section>
 
         {/* Session */}
