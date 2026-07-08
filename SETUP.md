@@ -233,4 +233,51 @@ automatically — you don't set those.
 
 ---
 
-_Stage 5 (account deletion) will be appended to this file next._
+## 10. Account deletion (Stage 5)
+
+Deleting a user requires the **service-role** key, so it runs in an Edge
+Function (never the client).
+
+Deploy it (same CLI setup as Stage 4):
+
+```bash
+supabase functions deploy delete-account
+```
+
+- It reuses the `RESEND_API_KEY` / `EMAIL_FROM` secrets from Stage 4 to send the
+  "account deleted" email.
+- `SUPABASE_SERVICE_ROLE_KEY` is injected automatically — you do **not** set it.
+- The function sends the farewell email, removes the user's uploaded avatars
+  from the `avatars` bucket, then deletes the auth user (which cascades their
+  `profiles` row via the foreign key).
+
+### Verify Stage 5
+
+- Account → **Danger zone → Delete account** → type `delete` → confirm.
+- You receive the "account deleted" email, are signed out, and land back on the
+  sign-in screen. Signing up again creates a fresh account.
+
+---
+
+## Summary — where each value lives
+
+| Value | Location | Notes |
+| :-- | :-- | :-- |
+| `VITE_SUPABASE_URL` | `.env.local` (client) | public |
+| `VITE_SUPABASE_ANON_KEY` | `.env.local` (client) | public (RLS protects data) |
+| `RESEND_API_KEY` | Edge Function secret | **server only** |
+| `EMAIL_FROM` | Edge Function secret | e.g. `Flux <hi@you.com>` |
+| `APP_URL` | Edge Function secret | used in the welcome email button |
+| `SUPABASE_SERVICE_ROLE_KEY` | auto-injected into functions | **never** in client/git |
+| Google client ID/secret | Supabase → Auth → Providers → Google | — |
+
+**SQL to run** (SQL Editor), in order:
+`0001_profiles.sql` → `0002_storage_avatars.sql` → `0003_avatar_emoji.sql`
+→ `0004_welcomed_at.sql`. (0003/0004 are no-ops if 0001 already had them.)
+
+**Functions to deploy:** `send-email`, `delete-account`.
+
+**Templates to paste** (Auth → Email Templates): `confirm-signup.html`,
+`reset-password.html`.
+
+Never commit `.env.local` or any service key — only `.env.example` is tracked.

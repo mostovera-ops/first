@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, LogOut, Check, Loader2, Mail } from 'lucide-react';
+import { ArrowLeft, LogOut, Check, Loader2, Mail, Trash2 } from 'lucide-react';
 import { useAuth } from '../../store/auth';
 import { useProfile, providerLabel } from '../../store/profile';
 import { useUI } from '../../store/ui';
+import { DeleteAccountModal } from './DeleteAccountModal';
 import { AvatarPicker } from '../avatar/AvatarPicker';
 import { AvatarUploadButton } from '../avatar/AvatarUploadButton';
 import { displayName } from '../../lib/avatar';
@@ -13,6 +14,7 @@ export function AccountPage() {
   const signOut = useAuth((s) => s.signOut);
   const profile = useProfile((s) => s.profile);
   const closeAccount = useUI((s) => s.closeAccount);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   return (
     <div className="min-h-full">
@@ -82,7 +84,27 @@ export function AccountPage() {
             Log out
           </button>
         </div>
+
+        {/* Danger zone */}
+        <div className="mt-8 rounded-xl border border-danger/25 bg-danger/[0.04] p-4">
+          <h2 className="text-[13px] font-semibold text-ink">Danger zone</h2>
+          <p className="mt-1 text-[12px] leading-relaxed text-ink-muted">
+            Permanently delete your account, profile, and uploaded avatar. This
+            can’t be undone.
+          </p>
+          <button
+            onClick={() => setConfirmingDelete(true)}
+            className="mt-3 inline-flex items-center gap-2 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] font-medium text-danger transition-colors hover:bg-danger/15"
+          >
+            <Trash2 size={15} />
+            Delete account
+          </button>
+        </div>
       </div>
+
+      {confirmingDelete && (
+        <DeleteAccountModal onCancel={() => setConfirmingDelete(false)} />
+      )}
     </div>
   );
 }

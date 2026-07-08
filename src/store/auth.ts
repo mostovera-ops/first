@@ -28,6 +28,7 @@ interface AuthState {
   sendPasswordReset: (email: string) => Promise<AuthResult>;
   updatePassword: (password: string) => Promise<AuthResult>;
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<AuthResult>;
 }
 
 function errorMessage(e: unknown): string {
@@ -153,5 +154,31 @@ export const useAuth = create<AuthState>((set, get) => ({
   signOut: async () => {
     if (supabase) await supabase.auth.signOut();
     set({ session: null, user: null, status: 'signedOut', recoveryMode: false });
+  },
+
+  deleteAccount: async () => {
+    if (!supabase) {
+      // No backend — just clear the local (preview) session.
+      set({ session: null, user: null, status: 'signedOut' });
+      return { ok: true };
+    }
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-account');
+      if (error) return { ok: false, message: error.message };
+      if (data && (data as { error?: string }).error) {
+        return { ok: false, message: (data as { error: string }).error };
+      }
+      // Account is gone — clear the now-invalid session locally.
+      await supabase.auth.signOut();
+      set({
+        session: null,
+        user: null,
+        status: 'signedOut',
+        recoveryMode: false,
+      });
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, message: errorMessage(e) };
+    }
   },
 }));
