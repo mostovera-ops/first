@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useStore } from './store';
 import { useAuth } from './store/auth';
@@ -101,9 +101,35 @@ export default function App() {
 }
 
 function FullscreenSpinner() {
+  // Escape hatch: the spinner must never appear to hang forever. If loading
+  // takes unusually long (e.g. a stalled redirect), offer a clean recovery.
+  const [tooLong, setTooLong] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setTooLong(true), 7000);
+    return () => clearTimeout(t);
+  }, []);
+
   return (
-    <div className="flex h-full items-center justify-center text-ink-faint">
+    <div className="flex h-full flex-col items-center justify-center gap-4 text-ink-faint">
       <Loader2 size={20} className="animate-spin" />
+      {tooLong && (
+        <div className="flex flex-col items-center gap-3 text-center">
+          <p className="max-w-xs text-[13px] text-ink-muted">
+            This is taking longer than usual.
+          </p>
+          <button
+            onClick={() => {
+              // Drop any leftover auth fragment and reload from a clean URL.
+              window.location.replace(
+                window.location.origin + window.location.pathname,
+              );
+            }}
+            className="rounded-lg bg-accent px-3.5 py-2 text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+          >
+            Reload
+          </button>
+        </div>
+      )}
     </div>
   );
 }
