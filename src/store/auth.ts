@@ -51,9 +51,7 @@ export const useAuth = create<AuthState>((set, get) => ({
       return;
     }
 
-    // Primary signal: onAuthStateChange fires INITIAL_SESSION on setup and on
-    // every change (including sessions parsed from the confirmation/OAuth URL).
-    supabase.auth.onAuthStateChange((event, session) => {
+    const applySession = (session: Session | null, event: string | null) => {
       set({
         session,
         user: session?.user ?? null,
@@ -65,24 +63,43 @@ export const useAuth = create<AuthState>((set, get) => ({
               ? false
               : get().recoveryMode,
       });
-    });
+    };
 
-    // Safety net: resolve the initial state even if the event is slow, and
-    // never leave the app stuck on the loading spinner if this call fails.
-    supabase.auth
-      .getSession()
-      .then(({ data }) => {
-        if (get().status === 'loading') {
-          set({
-            session: data.session,
-            user: data.session?.user ?? null,
-            status: data.session ? 'signedIn' : 'signedOut',
-          });
-        }
-      })
-      .catch(() => {
-        if (get().status === 'loading') set({ status: 'signedOut' });
-      });
+    // Primary signal: onAuthStateChange fires INITIAL_SESSION on setup and on
+    // every change (including sessions parsed from the confirmation/OAuth URL).
+    supabase.auth.onAuthStateChange((event, session) => applySession(session, event));
+
+    // Safety net that CANNOT hang. getSession() can occasionally stall while
+    // supabase-js parses a session out of the redirect URL (its internal lock),
+    // which would pin the app on the loading spinner. Race it against a timeout
+    // and retry a few times; if nothing resolves, fall back to the sign-in
+    // screen rather than spin forever.
+    const getSessionSafe = () =>
+      Promise.race<{ session: Session | null }>([
+        supabase!.auth.getSession().then((r) => ({ session: r.data.session })),
+        new Promise<{ session: Session | null }>((res) =>
+          setTimeout(() => res({ session: null }), 2000),
+        ),
+      ]);
+
+    const resolveInitial = async (attempt = 0) => {
+      if (get().status !== 'loading') return;
+      let session: Session | null = null;
+      try {
+        session = (await getSessionSafe()).session;
+      } catch {
+        /* ignore and retry */
+      }
+      if (get().status !== 'loading') return; // onAuthStateChange won the race
+      if (session) {
+        applySession(session, null);
+      } else if (attempt < 3) {
+        setTimeout(() => void resolveInitial(attempt + 1), 800);
+      } else {
+        set({ status: 'signedOut' });
+      }
+    };
+    void resolveInitial();
   },
 
   signUpWithEmail: async (email, password) => {
