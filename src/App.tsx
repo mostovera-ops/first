@@ -2,11 +2,14 @@ import { useEffect, useRef } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useStore } from './store';
 import { useAuth } from './store/auth';
+import { useProfile } from './store/profile';
+import { useUI } from './store/ui';
 import { setDbNamespace, migrateLegacyDataIfNeeded } from './db';
 import { Workspace } from './components/workspace/Workspace';
 import { Board } from './components/board/Board';
 import { TaskModal } from './components/modal/TaskModal';
 import { AuthScreen } from './components/auth/AuthScreen';
+import { AccountPage } from './components/account/AccountPage';
 
 export default function App() {
   const authStatus = useAuth((s) => s.status);
@@ -18,6 +21,11 @@ export default function App() {
   const loadBoards = useStore((s) => s.load);
   const resetBoards = useStore((s) => s.reset);
   const currentProjectId = useStore((s) => s.currentProjectId);
+
+  const loadProfile = useProfile((s) => s.loadProfile);
+  const clearProfile = useProfile((s) => s.clear);
+  const accountOpen = useUI((s) => s.accountOpen);
+  const closeAccount = useUI((s) => s.closeAccount);
 
   const userId = user?.id ?? null;
   const loadedForUser = useRef<string | null>(null);
@@ -36,6 +44,7 @@ export default function App() {
         loadedForUser.current = userId;
         resetBoards();
         setDbNamespace(userId);
+        if (user) void loadProfile(user);
         void (async () => {
           await migrateLegacyDataIfNeeded(userId);
           if (!cancelled) await loadBoards();
@@ -45,11 +54,22 @@ export default function App() {
       loadedForUser.current = null;
       resetBoards();
       setDbNamespace(null);
+      clearProfile();
+      closeAccount();
     }
     return () => {
       cancelled = true;
     };
-  }, [authStatus, userId, loadBoards, resetBoards]);
+  }, [
+    authStatus,
+    userId,
+    user,
+    loadBoards,
+    resetBoards,
+    loadProfile,
+    clearProfile,
+    closeAccount,
+  ]);
 
   if (authStatus === 'loading') {
     return <FullscreenSpinner />;
@@ -62,6 +82,10 @@ export default function App() {
 
   if (!boardsLoaded) {
     return <FullscreenSpinner />;
+  }
+
+  if (accountOpen) {
+    return <AccountPage />;
   }
 
   return (

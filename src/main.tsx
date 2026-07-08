@@ -3,10 +3,18 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { useStore } from './store'
+import { useAuth } from './store/auth'
+import { useProfile } from './store/profile'
+import { useUI } from './store/ui'
 
-// Expose the store in dev for E2E testing / debugging only.
+// Expose stores in dev for E2E testing / debugging only.
 if (import.meta.env.DEV) {
-  ;(window as unknown as { __store: typeof useStore }).__store = useStore
+  Object.assign(window as unknown as Record<string, unknown>, {
+    __store: useStore,
+    __auth: useAuth,
+    __profile: useProfile,
+    __ui: useUI,
+  })
 }
 
 createRoot(document.getElementById('root')!).render(

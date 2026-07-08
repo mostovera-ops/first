@@ -34,6 +34,20 @@ export interface Project {
   createdAt: number;
 }
 
+export type AvatarType = 'animal' | 'upload';
+
+export interface Profile {
+  id: string;
+  email: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_type: AvatarType;
+  avatar_animal: string | null;
+  avatar_url: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 /** Attachment as held in the store — blob replaced by an object URL for rendering. */
 export interface AttachmentMeta {
   id: string;

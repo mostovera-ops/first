@@ -104,5 +104,34 @@ auto-refreshes tokens), so users stay logged in across reloads.
 
 ---
 
-_Stages 2–5 (profiles table + RLS, avatar storage bucket, Resend emails,
-account deletion) will be appended to this file as those stages are built._
+## 7. Profiles table + Row Level Security (Stage 2)
+
+The account page reads/writes a `profiles` row per user, protected by RLS so a
+user can only see and edit their own row.
+
+1. In Supabase: **SQL Editor → New query**.
+2. Open `supabase/migrations/0001_profiles.sql` from this repo, paste its full
+   contents, and **Run**. This creates:
+   - the `profiles` table (id, email, first/last name, avatar fields,
+     timestamps),
+   - RLS policies (`select/insert/update/delete` limited to `auth.uid() = id`),
+   - an `updated_at` trigger,
+   - a `handle_new_user` trigger that auto-creates a profile row on sign-up and
+     **prefills first/last name from Google** metadata when present.
+3. Verify: **Table Editor → profiles** exists, and **Authentication → Policies**
+   shows four policies on `public.profiles`.
+
+No env changes are needed for this stage — the client uses the same anon key
+and RLS enforces per-user access.
+
+### Verify Stage 2
+
+- Sign in, open the avatar menu (top-right) → **Account settings**.
+- Your email shows with a **Password** or **Google** badge.
+- Edit first/last name → it autosaves ("Saved" appears); reload → it persists.
+- A Google sign-in should arrive with first/last name already filled in.
+
+---
+
+_Stages 3–5 (avatar storage bucket, Resend emails, account deletion) will be
+appended to this file as those stages are built._
