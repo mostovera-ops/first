@@ -73,6 +73,13 @@ export default function App() {
 
   // When the signed-in user changes, point IndexedDB at their namespace,
   // migrate any pre-auth boards on first login, then (re)load the boards.
+  //
+  // IMPORTANT: depend on `userId` (a stable string), NOT the `user` object.
+  // OAuth emits several events in a row (SIGNED_IN → TOKEN_REFRESHED →
+  // USER_UPDATED), each producing a new `user` object with the same id. If the
+  // effect depended on `user`, the second event would re-run it and its cleanup
+  // would flip `cancelled = true` before loadBoards() ran — leaving the board
+  // spinner stuck forever. Keyed on `userId`, it runs exactly once per user.
   useEffect(() => {
     let cancelled = false;
     if (authStatus === 'signedIn' && userId) {
@@ -80,7 +87,8 @@ export default function App() {
         loadedForUser.current = userId;
         resetBoards();
         setDbNamespace(userId);
-        if (user) void loadProfile(user);
+        const currentUser = useAuth.getState().user;
+        if (currentUser) void loadProfile(currentUser);
         void (async () => {
           try {
             await migrateLegacyDataIfNeeded(userId);
@@ -103,7 +111,6 @@ export default function App() {
   }, [
     authStatus,
     userId,
-    user,
     loadBoards,
     resetBoards,
     loadProfile,
